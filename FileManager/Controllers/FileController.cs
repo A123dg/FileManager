@@ -10,27 +10,27 @@ namespace FileManager.Controllers
     {
 
         private readonly FileService _fileService;
-        public FileController(FileService fileService )
+        public FileController(FileService fileService)
         {
             _fileService = fileService;
         }
         [HttpPost("upload")]
         public async Task<IActionResult> UploadFile([FromForm] FileUploadDto fileDto)
         {
-           var result = await _fileService.UploadAsync(fileDto);
+            var result = await _fileService.UploadAsync(fileDto);
             return Ok(result);
         }
         [HttpGet]
         public async Task<IActionResult> GetAllAynce()
         {
-            var result =  await _fileService.GetAllFile();
+            var result = await _fileService.GetAllFile();
             return Ok(result);
         }
         [HttpGet("download/{id}")]
-        public async Task<IActionResult> Download( int id)
+        public async Task<IActionResult> Download(int id)
         {
             var result = await _fileService.DownloadAsync(id);
-            if(result == null) return NotFound();
+            if (result == null) return NotFound();
             return File(result.Value.data, "application/octet-stream", result.Value.name);
 
         }
@@ -40,8 +40,17 @@ namespace FileManager.Controllers
             await _fileService.DeleteAsync(id);
             return NoContent();
 
-            
+
 
         }
+        [HttpGet("download/uploader/{uploader}")]
+        public async Task<IActionResult> DownloadMultiFile(string uploader)
+        {
+            var result = await _fileService.DownloadByUploaderAsync(uploader);
+            if (result == null) return NotFound();
+            return File(result.Value.data, "application/zip", result.Value.name);
+
+        }
+
     }
 }

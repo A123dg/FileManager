@@ -8,6 +8,7 @@ namespace FileManager.Interfaces
         Task<List<FileEntity>> GetAllAsync();
         Task<FileEntity?> GetByIdAsync(int id);
         Task DeleteAsync(FileEntity File );
+        Task <List<FileEntity>> GetByUploaderAsync(string uploader);
         Task SaveChangesAsync();
     }
 }

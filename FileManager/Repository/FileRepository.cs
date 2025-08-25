@@ -41,5 +41,12 @@ namespace FileManager.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<FileEntity>> GetByUploaderAsync(string uploader)
+        {
+            return await _context.Files
+                                 .Where(f => f.Uploader == uploader)
+                                 .ToListAsync();
+        }
     }
 }

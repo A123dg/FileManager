@@ -3,6 +3,7 @@ using AutoMapper;
 using FileManager.DTOs;
 using FileManager.Models;
 using System.IO;
+using System.IO.Compression;
 
 namespace FileManager.Services
 {
@@ -24,25 +25,22 @@ namespace FileManager.Services
 
         public async Task<FileDto> UploadAsync(FileUploadDto fileUploadDto)
         {
-            var filePath = Path.Combine(_uploadPath, fileUploadDto.File.FileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await fileUploadDto.File.CopyToAsync(stream);
-            }
+            using var ms = new MemoryStream();
+            await fileUploadDto.File.CopyToAsync(ms);
 
             var fileEntity = new FileEntity
             {
                 FileName = fileUploadDto.File.FileName,
                 FileSize = fileUploadDto.File.Length,
-                FilePath = filePath,
                 Uploader = fileUploadDto.Uploader,
-                UploadedAt = DateTime.UtcNow
+                UploadedAt = DateTime.UtcNow,
+                FileData = ms.ToArray() 
             };
 
             var save = await _repository.AddAsync(fileEntity);
             return _mapper.Map<FileDto>(save);
         }
+
 
         public async Task<List<FileDto>> GetAllFile()
         {
@@ -68,6 +66,31 @@ namespace FileManager.Services
                 System.IO.File.Delete(file.FilePath);
 
             await _repository.DeleteAsync(file);
+        }
+        public async Task<(byte[] data, string name)?> DownloadByUploaderAsync(string uploader)
+        {
+            var files = await _repository.GetByUploaderAsync(uploader);
+            if (!files.Any()) return null;
+
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var zip = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                {
+                    foreach (var file in files)
+                    {
+                        if (System.IO.File.Exists(file.FilePath))
+                        {
+                            var entry = zip.CreateEntry(file.FileName, CompressionLevel.Fastest);
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = new FileStream(file.FilePath, FileMode.Open, FileAccess.Read))
+                            {
+                                await fileStream.CopyToAsync(entryStream);
+                            }
+                        }
+                    }
+                }
+                return (memoryStream.ToArray(), $"{uploader}_files.zip");
+            }
         }
     }
 }

@@ -10,5 +10,6 @@
 
         public string Uploader { get; set; } =string.Empty;
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public byte[] FileData { get; set; }
     }
 }
